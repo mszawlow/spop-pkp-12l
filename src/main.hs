@@ -6,9 +6,9 @@ main :: IO ()
 t,m :: StationDB
 
 
-l = [(St "Krakow" []),(St "Warszawa" [])]
-t = insertStation l empty
-m = modifyStation insertArrival "Warszawa" (Arr (Tr "mieszko") "12:34" (findByName "Warszawa" t)) t
+l = [(Station "Krakow" []),(Station "Warszawa" [])]
+t = insertStations l empty
+m = modifyStation insertArrivals "Warszawa" [(Arrival (Train "mieszko") "12:34" (findByName "Warszawa" t)),(Arrival (Train "rejtan") "18:22" (findByName "Warszawa" t))] t
 
 
 main = print m
