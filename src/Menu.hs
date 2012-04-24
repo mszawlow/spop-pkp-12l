@@ -6,7 +6,7 @@ main = do menu
 
 -- Funkcja menu g³ównego
 menu = do 
-	putStrLn " "
+	putStrLn " dfgdfgdf"
 	putStrLn "--------------------------------MENU GLOWNE-----------------------------------"
 	putStrLn "1. Dodaj, usun lub modyfikuj informacje o stacjach"
 	putStrLn "2. Dodaj, usun lub modyfikuj informacje o pociagach"
