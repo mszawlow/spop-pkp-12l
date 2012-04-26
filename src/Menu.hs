@@ -1,8 +1,9 @@
 module Menu where
 import IO
 import Char
-
-main = do menu
+import System.Time
+import System.Locale
+import System.Environment
 
 -- Funkcja menu g³ównego
 menu = do 
@@ -222,17 +223,19 @@ eraseTrainMenu = do
 modifyTrainMenu = do
 	putStrLn " "
 	putStrLn "1. Modyfikuj caly rozklad dla pociagu"
-	putStrLn "2. Modyfikuj rozklad pociagu dla zadanych stacji"
-	putStrLn "3. Zmien dni kursowania dla pociagu"
-	putStrLn "4. Zmien nazwe pociagu"
+	putStrLn "2. Dodaj stacje do pociagu lub zmien godziny przyjazdu i odjazdu pociagu dla stacji"
+	putStrLn "3. Usun stacje z pociagu"
+	putStrLn "4. Zmien dni kursowania dla pociagu"
+	putStrLn "5. Zmien nazwe pociagu"
 	name <- getLine
 	case name of
 		"X" -> trainMenu
 		"x" -> trainMenu
 		"1" -> modifyTrainTimetable
-		"2" -> modifyPartTrainTimetable
-		"3" -> modifyTrainDays
-		"4" -> modifyTrainName
+		"2" -> addOrModifyStationForTrain
+		"3" -> eraseOneStationFromTrain
+		"4" -> modifyTrainDays
+		"5" -> modifyTrainName
 		otherwise -> do
 						putStrLn "Wybrano zla opcje!!! Sprobuj ponownie."
 						modifyTrainMenu
@@ -243,8 +246,8 @@ modifyTrainTimetable = do
 	putStrLn "Podaj nazwe pociagu, dla ktorego chcesz zmienic rozklad jazdy: "
 	name <- getLine
 	case name of
-		"X" -> trainMenu
-		"x" -> trainMenu
+		"X" -> modifyTrainMenu
+		"x" -> modifyTrainMenu
 		otherwise -> if searchTrain name then do
 			putStrLn "Podaj nowe dni kursowania pociagu: "
 			runDays <- getLine
@@ -261,22 +264,74 @@ modifyTrainTimetable = do
 			putStrLn "Podany pociag istnieje! Wpisz inna nazwe!"
 			modifyTrainTimetable
 
+-- Funkcja dodaje stacje do pociagu
+addOrModifyStationForTrain = do 	
+	putStrLn " "
+	putStrLn "Wprowadz nazwe pociagu, dla ktorego chcesz dodac stacje badz zmienic godziny przyjazdu i odjazdu pociagu: "
+	trainName <- getLine
+	case trainName of
+		"X" -> modifyTrainMenu
+		"x" -> modifyTrainMenu
+		otherwise -> if searchTrain trainName then do
+			putStrLn ("Podaj nazwe stacji dla pociagu " ++ trainName ++ " : ")
+			stationName <- getLine
+			case stationName of
+				"X" -> addOrModifyStationForTrain
+				"x" -> addOrModifyStationForTrain
+				otherwise -> if searchStation stationName then do
+					putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ ": ")
+					arrival <- getLine
+					case arrival of
+						"X" -> addOrModifyStationForTrain
+						"x" -> addOrModifyStationForTrain
+						otherwise -> do
+							putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ ": ")
+							departure <- getLine
+							case departure of
+								"X" -> addOrModifyStationForTrain
+								"x" -> addOrModifyStationForTrain
+								otherwise -> if funkcja trainName then do -- !!!!!!!!!!!!!!!!!!!! funkcja trainName stationName arrival departure
+									putStrLn ("Stacja " ++ stationName ++ " zostala dodana lub zmodyfikowana dla pociagu " ++ trainName ++ ".")
+									addOrModifyStationForTrain
+								else do
+									putStrLn "Nie udalo sie dodac lub zmodyfikowac stacji dla pociagu! Sprobuj ponownie ..."
+									addOrModifyStationForTrain
+				else do 
+					putStrLn "Podana stacja nie istnieje! Wpisz inna nazwe!"
+					addOrModifyStationForTrain
+		else do 
+			putStrLn "Podany pociag nie istnieje! Wpisz inna nazwe!"
+			addOrModifyStationForTrain
 
--- DO NAPISANIA CALA FUNKCJA !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
--- Funkcja zmienia wyswietla menu do podmieniania czesciowego rozkladu jazdy
-modifyPartTrainTimetable = do
+	
+
+-- Funkcja usuwa stacje z rozkladu jazdy pociagu
+eraseOneStationFromTrain = do
 	putStrLn ""
-	putStrLn "Podaj nazwe pociagu, dla ktorego chcesz czesciowo zmienic rozklad jazdy: "
+	putStrLn "Podaj nazwe pociagu, dla ktorego chcesz usunac stacje: "
 	name <- getLine
 	case name of
-		"X" -> trainMenu
-		"x" -> trainMenu
-		otherwise -> if searchTrain name then
-			-- FUNKCJA KTORA CZYSCI WSZYSTKIE STACJE DLA POCIAGU eraseStationFromTrain name
-			addStationToTrain name "modify"
+		"X" -> modifyTrainMenu
+		"x" -> modifyTrainMenu
+		otherwise -> if searchTrain name then do
+			putStrLn ("Podaj nazwe stacji, ktora chcesz usunac z rozkladu jazdy pociagu " ++ name ++ ": ")
+			stationName <- getLine
+			case stationName of
+				"X" -> eraseOneStationFromTrain
+				"x" -> eraseOneStationFromTrain
+				otherwise -> if searchTrain name then -- !!!!!!!!!!!!!! Funkcja wyszukiwania searchStationForTrain trainName stationName
+					if funkcja name then do-- !!!!!!!!!!!!!!!!!!!!! funkcja name stationName (usuwajaca stacje z pociagu)
+						putStrLn ("Udalo sie usunac stacje " ++ stationName ++ " z rozkladu jazdy pociagu " ++ name ++ ".")
+						eraseOneStationFromTrain
+					else do
+						putStrLn ("Nie udalo sie usunac stacji!!! Sprobuj ponownie...")
+						eraseOneStationFromTrain
+				else do
+					putStrLn ("Podana stacja nie istnieje lub nie nalezy do rozkladu jazdy tego pociagu!!! Sprobuj ponownie...")
+					eraseOneStationFromTrain
 		else do 
-			putStrLn "Podany pociag istnieje! Wpisz inna nazwe!"
-			modifyTrainTimetable
+			putStrLn "Podany pociag nie istnieje! Wpisz inna nazwe!"
+			eraseOneStationFromTrain
 
 
 -- Funkcja zmienia dni kursowania dla pociagu
@@ -380,3 +435,27 @@ timetableMenu = do
 		else do
 			putStrLn "Podana stacja nie istnieje!!! Sprobuj ponownie ..."
 			timetableMenu
+
+
+-- Funkcja sprawdza czy argument jest Intem
+isInt [] = False
+isInt [x] = if isDigit x then True
+				 else False
+isInt (x:xs) = if isDigit x then isInt xs
+					else False
+					
+-- Funkcja sprawdza czy argument jest Stringiem
+isString [] = False
+isString [x] = if isAlpha x then True
+				  else False
+isString (x:xs) = if isAlpha x then isString xs
+					 else False
+
+-- !!!!!!!!!!!!!!! SPRAWDZANIE POPRAWNEJ DLUGOSCI ZEBY SIE NIE WYSYPYWALO JAK JEST ZA MALO ZNAKOW
+-- Funkcja sprawdza czy argument jest godzina
+isTime [] = False
+isTime (a:b:c:d:e:f) = if (a>='0' && a<='1' && (isDigit b) && c==':' && d>='0' && d<='5' && (isDigit e) && f==[]) then True
+							 else if (a=='2' && b>='0' && b<='3' && c==':' && d>='0' && d<='5' && (isDigit e) && f==[]) then True
+							 else False
+							
+
