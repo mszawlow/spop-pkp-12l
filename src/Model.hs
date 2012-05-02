@@ -9,19 +9,22 @@ import Data.Time hiding (Day)
 ---------------------------------------
 data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun deriving (Show, Enum)
 
-data Train = Train String [Day]
+-- nazwa dni stacje
+data Train = Train String [Day] [Id]
 
 --konstruktor: St name [lista pociagow]
 data Station = Station String [Arrival]
 
---konstruktor: Arr pociag czasPrzyjazdu dokadDalej
-data Arrival = Arrival Train TimeOfDay Station
+--konstruktor: Arr pociagId czasPrzyjazdu
+data Arrival = Arrival Id TimeOfDay TimeOfDay
 
-data (Named a) => DB a = SDB [a] | TDB [a]
+data (Named a) => DB a = DB [a]
 
 data DBS = DBS (DB Station) (DB Train)
 
 data When = When [Day] TimeOfDay
+
+data Id = Id String
 
 
 ----------------------------------------
@@ -46,15 +49,21 @@ class Database d where
     exists :: (Named a,Eq a) => String -> (d a) -> Bool
     exists name db = (findAllByName name db) /= []
 
+    remove :: (Named a) => String -> (d a) -> (d a)
+    remove name db = setObjects newObj db where
+                 obj = getObjects db
+                 newObj = concat (map (\it -> if getName it == name then [] else [it]) obj)
 -----------------------------------------
 --class instance definitions-------------
 -----------------------------------------
 instance (Named a,Show a) => Show (DB a) where
-    show (SDB st) = concat (map show st)
-    show (TDB tr) = concat (map show tr)
+    show (DB x) = concat (map show x)
+
+instance Named Id where
+    getName (Id a) = a
 
 instance Named Train where
-    getName (Train name days) = name
+    getName (Train name days stations) = name
 
 instance Named Arrival where
     getName (Arrival tr time st) = getName tr
@@ -63,24 +72,26 @@ instance Named Station where
     getName (Station name arrs) = name
 
 instance Database DB where
-    --empty = SDB []
-    getObjects (SDB st) = st
-    setObjects x (SDB st) = SDB x
-    --getObjects (TDB tr) = tr
-    --setObjects x (TDB tr) = TDB x
+    getObjects (DB x) = x
+    setObjects a (DB x) = DB a
 
 instance Show Train where
-    show (Train name days) = "Pociag [" ++ name ++ "]\n"
+    show (Train name days stations) = "Pociag [" ++ name ++ "]\n"
 
 instance Show Station where
     show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
 
 instance Show Arrival where
-    show (Arrival tr time st) = show time ++ " " ++ getName tr ++ " " ++ getName st ++ "\n"
+    show (Arrival tr timeIn timeOut) = show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ "\n"
+
+instance Eq Day
 
 ----------------------------------------
 --Methods-------------------------------
 ----------------------------------------
+empty :: DBS
+empty = DBS (DB []) (DB [])
+
 modifyStation :: (Station -> [a] -> Station) -> String -> [a] -> DB Station -> DB Station
 modifyStation f name items db = setObjects os' db where
     os' = map (\x -> if (getName x) == name then f x items  else x) arr
@@ -89,39 +100,95 @@ modifyStation f name items db = setObjects os' db where
 insertArrivals :: Station -> [Arrival] -> Station
 insertArrivals (Station name arrs) arr = Station name (arr ++ arrs)
 
+renameStation :: Station -> [String] -> Station
+renameStation (Station _ arrs) names = (Station (head names) arrs)
+
 getArrivals :: Station -> [Arrival]
 getArrivals (Station name arrs) = arrs
+
+getDays :: Train -> [Day]
+getDays (Train _ days _) = days
 
 addStation :: String-> DB Station  -> DB Station
 addStation name db = insert [(Station name [])] db
 
 eraseStation :: String -> DBS -> DBS
---TO DO
-eraseStation name (DBS sdb tdb) = (DBS sdb tdb)
+eraseStation name (DBS sdb tdb) = (DBS sdb' tdb') where
+    sdb' = remove name sdb
+    trains = getObjects tdb
+    newTrains = map (removeStationFromTrain name) trains
+    tdb' = setObjects newTrains tdb
 
-addTrain :: String -> [Day] -> DBS -> DBS
-addTrain name days (DBS sdb tdb) = DBS sdb (insert [(Train name days)] tdb)
+removeStationFromTrain :: String -> Train -> Train
+removeStationFromTrain stId (Train name days st) = (Train name days stations) where
+    stations = concat (map (\it -> if getName it == name then [] else [it]) st)
 
-addStationToTrain :: String -> String ->String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
-addStationToTrain stName stNext trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb) where
+
+addTrain :: String -> [Day] -> DB Train -> DB Train
+addTrain name days db = insert [(Train name days [])] db
+
+getId :: (Named a) => a -> Id
+getId a = (Id (getName a))
+
+
+--przerobic aby dodawalo do listy pociagu + wywalic nastepnik
+addStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
+addStationToTrain stName trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb') where
     sdb' = modifyStation insertArrivals stName [arrival] sdb
-    arrival = (Arrival train outTime nextStation)
+    arrival = (Arrival (getId train) inTime outTime)
     train = head (findAllByName trName tdb)
-    nextStation = head (findAllByName stNext sdb)
+    tdb' = setObjects newTrains tdb
+    newTrains = concat (
+                   map
+                   (\(Train n d s) ->
+                        if n == trName
+                        then [(Train n d (s ++ [(Id stName)]))]
+                        else [(Train n d s)])
+                   (getObjects tdb)
+                  )
 
 eraseTrain :: String -> DBS -> DBS
-eraseTrain name (DBS sdb tdb) = (DBS (setObjects sdb' sdb) (setObjects tdb' tdb)) where
+eraseTrain name (DBS sdb tdb) = (DBS (setObjects sdb' sdb) tdb') where
     sdb' = map (\station -> removeTrainArrival station (getName train)) (getObjects sdb)
     train = head (findAllByName name sdb)
-    tdb' = concat (map (\tr -> if getName tr == getName train then [] else [tr]) (getObjects tdb))
+    tdb' = remove name tdb
 
 removeTrainArrival :: Station -> String -> Station
 removeTrainArrival (Station name arrs) trainName = (Station name arrs') where
-    arrs' = concat (map (\it -> if trainName == getName it then [] else [it]) arrs)
+    arrs' = concat (
+                    map
+                    (\it ->
+                         if trainName == getName it
+                         then []
+                         else [it])
+                    arrs
+                   )
 
 modifyTrainDays :: String -> [Day] -> DBS -> DBS
 modifyTrainDays name days (DBS sdb tdb) = (DBS sdb (setObjects tdb' tdb)) where
-    tdb' = concat (map (\train -> if getName train == name then [(Train name days)] else [train]) (getObjects tdb))
+    tdb' = concat (
+                   map
+                   (\(Train n d s) ->
+                        if n == name
+                        then [(Train n days s)]
+                        else [(Train n d s)])
+                   (getObjects tdb)
+                  )
 
-getTimetableForStation :: String -> Day -> String
-getTimetableForStation name day = "nic na razie" 
+getTimetableForStation :: String -> Day -> DBS -> String
+getTimetableForStation name day (DBS sdb tdb)  = ret where
+    station = head (findAllByName name sdb)
+    arrivals = getArrivals station
+    ret = concat (
+                  map (\arr ->
+                       if isTrainOnTimetable (getName arr) day tdb
+                       then show arr
+                       else []
+                      )
+                  arrivals)
+
+
+isTrainOnTimetable :: String -> Day -> DB Train -> Bool
+isTrainOnTimetable name day tdb = ret where
+    train = head (findAllByName name tdb)
+    ret = elem day (getDays train)
