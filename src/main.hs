@@ -8,6 +8,10 @@ main :: IO ()
 s2d :: String -> TimeOfDay
 s2d s = read s::TimeOfDay
 
+
+
+
+
 getTestData :: DBS
 getTestData = ret where
     tdb =  DB [(Train "Mieszko" [Mon, Tue, Fri, Sat, Sun] []), (Train "Chrobry" [Mon, Tue, Fri, Sat, Sun] [])]
@@ -29,4 +33,5 @@ getTestData = ret where
 main = ret where
     x (DBS (DB a) _) = map show a
     y (DBS _ (DB a)) = map show a
-    ret = do putStrLn (concat (x getTestData) ++ concat (y getTestData))
+    tdb (DBS _ a) = a
+    ret = do putStrLn (concat (x getTestData) ++ concat (y getTestData) ++ getTimetableForStation "Warszawa" Mon getTestData)
