@@ -7,7 +7,7 @@ import Data.Time hiding (Day)
 ---------------------------------------
 --data definitions---------------------
 ---------------------------------------
-data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun deriving (Show, Enum)
+data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun deriving (Show, Enum, Read)
 
 -- nazwa dni stacje
 data Train = Train String [Day] [Id]
@@ -86,8 +86,13 @@ instance Show Arrival where
 
 instance Eq Day
 
+---------------------------------------
+--API----------------------------------
+---------------------------------------
+
+
 ----------------------------------------
---Methods-------------------------------
+--Helper Methods------------------------
 ----------------------------------------
 empty :: DBS
 empty = DBS (DB []) (DB [])
@@ -99,6 +104,9 @@ modifyStation f name items db = setObjects os' db where
 
 insertArrivals :: Station -> [Arrival] -> Station
 insertArrivals (Station name arrs) arr = Station name (arr ++ arrs)
+
+replaceArrivals :: Station -> [Arrival] -> Station
+replaceArrivals (Station name arrs) arr = Station name arr
 
 renameStation :: Station -> [String] -> Station
 renameStation (Station _ arrs) names = (Station (head names) arrs)
@@ -126,12 +134,22 @@ removeStationFromTrain stId (Train name days st) = (Train name days stations) wh
 
 addTrain :: String -> [Day] -> DB Train -> DB Train
 addTrain name days db = insert [(Train name days [])] db
-
 getId :: (Named a) => a -> Id
 getId a = (Id (getName a))
 
+renameTrain :: String -> String -> DBS -> DBS
+renameTrain old new (DBS sdb tdb) = (DBS sdb tdb') where
+    tdb' = setObjects trains' tdb
+    trains = getObjects tdb
+    trains' = map (\(Train id st) -> if (old == id) then (Train new st) else (Train id st)) trains
 
---przerobic aby dodawalo do listy pociagu + wywalic nastepnik
+
+modifyStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
+modifyStationToTrain stName trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb) where
+    (Station name arrs) = head (findAllByName stName sdb)
+    newArrs = map (\(Arrival trainId x y) -> if (trainId == trName) then (Arrival trainId inTime outTime) else (Arrival trainId x y)) arrs
+    sdb' = modifyStation replaceArrivals stName newArrs sdb
+
 addStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
 addStationToTrain stName trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb') where
     sdb' = modifyStation insertArrivals stName [arrival] sdb
@@ -152,6 +170,13 @@ eraseTrain name (DBS sdb tdb) = (DBS (setObjects sdb' sdb) tdb') where
     sdb' = map (\station -> removeTrainArrival station (getName train)) (getObjects sdb)
     train = head (findAllByName name sdb)
     tdb' = remove name tdb
+
+--API
+eraseStationFromTrain :: String -> String -> DBS -> DBS
+eraseStationFromTrain stName trName (DBS sdb tdb) = (DBS (setObjects sdb' sdb) (setObjects tdb' tdb)) where
+    sdb' = map (\station -> removeTrainArrival station trName) (getObjects sdb)
+    tdb' = map (\tr -> if ((getName tr) == trName) then removeStationFromTrain stName tr  else tr) (getObjects tdb)
+
 
 removeTrainArrival :: Station -> String -> Station
 removeTrainArrival (Station name arrs) trainName = (Station name arrs') where
@@ -192,3 +217,8 @@ isTrainOnTimetable :: String -> Day -> DB Train -> Bool
 isTrainOnTimetable name day tdb = ret where
     train = head (findAllByName name tdb)
     ret = elem day (getDays train)
+
+isStationInTrain :: String -> String -> DB Train -> Bool
+isStationInTrain stName trName tdb = ret where
+    (Train name stations) = head (findAllByName trName tdb)
+    ret = elem stName stations
