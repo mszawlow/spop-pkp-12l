@@ -83,7 +83,7 @@ instance Show Station where
     show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
 
 instance Show Arrival where
-    show (Arrival tr timeIn timeOut) = show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ "\n"
+    show (Arrival tr timeIn timeOut) = show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr  ++"\n"
 
 instance Eq Day
 
