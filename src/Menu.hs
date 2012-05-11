@@ -67,12 +67,11 @@ addStationMenu (DBS sdb tdb) = do
 	case name of
 		"X" -> stationMenu (DBS sdb tdb)
 		"x" -> stationMenu (DBS sdb tdb)
-		otherwise -> if exists name sdb == False  then do
-				putStrLn ("Stacja " ++ name ++ " zostala poprawnie dodana!")
-				addStationMenu (DBS (addStation name sdb) tdb)
-		else do 
-			putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
-			addStationMenu (DBS sdb tdb)
+		otherwise -> if exists name sdb == False  then 
+                                 do putStrLn ("Stacja " ++ name ++ " zostala poprawnie dodana!")
+	                            addStationMenu (DBS (addStation name sdb) tdb)
+		             else do putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
+                                     addStationMenu (DBS sdb tdb)
 
 
 
@@ -87,9 +86,8 @@ eraseStationMenu (DBS sdb tdb) = do
 		otherwise -> if exists name sdb then do
 				putStrLn ("Stacja " ++ name ++ " zostala usunieta z rozkladow!")
 				eraseStationMenu (eraseStation name (DBS sdb tdb))
-		else do 
-			putStrLn "Podana stacja nie istnieje! Wpisz inna nazwe!"
-			eraseStationMenu (DBS sdb tdb)
+		             else do	putStrLn "Podana stacja nie istnieje! Wpisz inna nazwe!"
+                                        eraseStationMenu (DBS sdb tdb)
 
 -- Funkcja wyswietlajaca menu modyfikowania stacji
 modifyStationMenu (DBS sdb tdb) = do
@@ -108,12 +106,12 @@ modifyStationMenu (DBS sdb tdb) = do
 				otherwise -> if exists new_name sdb == False then do
 						putStrLn ("Stacja " ++ name ++ " zmienila nazwe na " ++ new_name)
 						modifyStationMenu (DBS (modifyStation renameStation name [new_name] sdb) tdb)
-				else do 
-					putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
-					modifyStationMenu (DBS sdb tdb)
-		else do 
-			putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
-			modifyStationMenu (DBS sdb tdb)
+				             else do 
+					       putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
+					       modifyStationMenu (DBS sdb tdb)
+		             else do 
+		               putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
+			       modifyStationMenu (DBS sdb tdb)
 
 				
 
@@ -151,9 +149,9 @@ addTrainMenu (DBS sdb tdb) = do
 				"X" -> addTrainMenu (DBS sdb tdb)
 				"x" -> addTrainMenu (DBS sdb tdb)
 				otherwise -> addStationToTrainMenu name "add" (modifyTrainDays name (string2Day runDays) (DBS sdb tdb))
-		else do 
-			putStrLn "Podany pociag istnieje! Wpisz inna nazwe!"
-			addTrainMenu (DBS sdb tdb)
+		             else do 
+			       putStrLn "Podany pociag istnieje! Wpisz inna nazwe!"
+			       addTrainMenu (DBS sdb tdb)
 				
 -- Funkcja zamieniajaca Stringa na Day
 string2Day string = [read string::Day]
@@ -182,18 +180,16 @@ addStationToTrainMenu trainName mode (DBS sdb tdb) = do
 					case departure of
 						"X" -> if mode == "add" then addTrainMenu (DBS sdb tdb) else modifyTrainTimetable (DBS sdb tdb)
 						"x" -> if mode == "add" then addTrainMenu (DBS sdb tdb) else modifyTrainTimetable (DBS sdb tdb)
-						otherwise -> if exists trainName tdb then do
-							putStrLn ("Stacja " ++ stationName ++ " zostala dodana do pociagu " ++ trainName ++ ".")
-							if mode == "add" then addStationToTrainMenu trainName "add" addStationToTrain stationName trainName (string2Time arrival) (string2Time departure)
-							else addStationToTrainMenu trainName "modify" modifyStationToTrain stationName trainName (string2Time arrival) (string2Time departure)
-						else do
-							putStrLn "Podany pociag nie istnieje! Sprobuj ponownie ..."
-							if mode == "add" then addStationToTrainMenu trainName "add" (DBS sdb tdb)
-							else addStationToTrainMenu trainName "modify" (DBS sdb tdb)
-		else do 
-			putStrLn "Podana stacja nie istnieje! Wpisz inna nazwe!"
-			if mode == "add" then addStationToTrainMenu trainName "add" (DBS sdb tdb)
-			else addStationToTrainMenu trainName "modify" (DBS sdb tdb)
+                                                otherwise -> if exists trainName tdb then
+                                                                 do putStrLn ("Stacja " ++ stationName ++ " zostala dodana do pociagu " ++ trainName ++ ".")
+                                                                    if mode == "add" then addStationToTrainMenu trainName "add" (addStationToTrain stationName trainName (string2Time arrival) (string2Time departure))
+						                    else addStationToTrainMenu trainName "modify" (modifyStationToTrain stationName trainName (string2Time arrival) (string2Time departure))
+						             else do putStrLn "Podany pociag nie istnieje! Sprobuj ponownie ..."
+							             if mode == "add" then addStationToTrainMenu trainName "add" (DBS sdb tdb)
+							             else addStationToTrainMenu trainName "modify" (DBS sdb tdb)
+		             else do putStrLn "Podana stacja nie istnieje! Wpisz inna nazwe!"
+                                     if mode == "add" then addStationToTrainMenu trainName "add" (DBS sdb tdb)
+			             else addStationToTrainMenu trainName "modify" (DBS sdb tdb)
 
 -- Funkcja wyswietlajaca menu usuwania pociagu
 eraseTrainMenu (DBS sdb tdb) = do
