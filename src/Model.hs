@@ -83,14 +83,38 @@ instance Show Station where
     show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
 
 instance Show Arrival where
-    show (Arrival tr timeIn timeOut) = show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr  ++"\n"
+    show (Arrival tr timeIn timeOut) = show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
 
-instance Eq Day
+instance Eq Day where
+    c == c' = fromEnum c == fromEnum c'
 
 
 ----------------------------------------
 --Helper Methods------------------------
 ----------------------------------------
+
+printArrival :: String -> Arrival -> DBS -> String
+printArrival stName arr (DBS sdb tdb) = ret where
+    (Station _ arrs) = head (findAllByName stName sdb)
+    arrStr = map show arrs
+    ret = show arr ++ getNext stations stName
+    (Train _ _ stations) = head (findAllByName (getName arr) tdb)
+    getNext (x:[]) n = "Ostatnia stacja\n"
+    getNext (x:xs) n  | (n == getName x) = getName (head xs)
+                      | otherwise = getNext xs n
+
+
+
+
+--bierze nastepna stacje pociagu
+getNextStation :: String -> String -> DBS -> String
+getNextStation stName trName (DBS sdb tdb) = ret where
+    ret = getNext stations stName
+    (Train _ _ stations) = head (findAllByName trName tdb)
+    getNext (x:xs) n  | (n == getName x) = getName (head xs)
+                      | otherwise = getNext xs n
+
+
 join :: [String] -> String -> String
 join [] separator = ""
 join (x:[]) separator = x

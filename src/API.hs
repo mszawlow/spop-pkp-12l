@@ -107,18 +107,12 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
     ret = concat (
                   map (\arr ->
                        if isTrainOnTimetable (getName arr) day tdb
-                       then show arr
+                       then printArrival name arr (DBS sdb tdb)
                        else []
                       )
                   arrivals)
 
---bierze nastepna stacje pociagu
-getNextStation :: String -> String -> DBS -> String
-getNextStation stName trName (DBS sdb tdb) = ret where
-    ret = getNext stations stName
-    (Train _ _ stations) = head (findAllByName trName tdb)
-    getNext (x:xs) n  | (n == getName x) = getName (head xs)
-                      | otherwise = getNext xs n
+
 
 
 
