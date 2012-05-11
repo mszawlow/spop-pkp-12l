@@ -141,13 +141,13 @@ renameTrain :: String -> String -> DBS -> DBS
 renameTrain old new (DBS sdb tdb) = (DBS sdb tdb') where
     tdb' = setObjects trains' tdb
     trains = getObjects tdb
-    trains' = map (\(Train id st) -> if (old == id) then (Train new st) else (Train id st)) trains
+    trains' = map (\(Train id days st) -> if (old == id) then (Train new days st) else (Train id days st)) trains
 
 
 modifyStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
 modifyStationToTrain stName trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb) where
     (Station name arrs) = head (findAllByName stName sdb)
-    newArrs = map (\(Arrival trainId x y) -> if (trainId == trName) then (Arrival trainId inTime outTime) else (Arrival trainId x y)) arrs
+    newArrs = map (\(Arrival trainId x y) -> if (getName trainId == trName) then (Arrival trainId inTime outTime) else (Arrival trainId x y)) arrs
     sdb' = modifyStation replaceArrivals stName newArrs sdb
 
 addStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
@@ -220,5 +220,8 @@ isTrainOnTimetable name day tdb = ret where
 
 isStationInTrain :: String -> String -> DB Train -> Bool
 isStationInTrain stName trName tdb = ret where
-    (Train name stations) = head (findAllByName trName tdb)
-    ret = elem stName stations
+    (Train name days stations) = head (findAllByName trName tdb)
+    ret = elem stName (map getName stations)
+
+
+--funkcja robiaca show na kazdej stacji z danego dnia
