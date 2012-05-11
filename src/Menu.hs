@@ -1,5 +1,6 @@
 module Menu where
 import Model
+import API
 import IO
 import Char
 import System.Time hiding (Day)
