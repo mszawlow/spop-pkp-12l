@@ -112,6 +112,15 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
                       )
                   arrivals)
 
+--bierze nastepna stacje pociagu
+getNextStation :: String -> String -> DBS -> String
+getNextStation stName trName (DBS sdb tdb) = ret where
+    ret = getNext stations stName
+    (Train _ _ stations) = head (findAllByName trName tdb)
+    getNext (x:xs) n = n == getName x | return getName (head xs)
+                       otherwise | return getNext xs n
+
+
 
 
 
