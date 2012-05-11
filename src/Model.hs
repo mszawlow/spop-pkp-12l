@@ -75,7 +75,9 @@ instance Database DB where
     setObjects a (DB x) = DB a
 
 instance Show Train where
-    show (Train name days stations) = "Pociag [" ++ name ++ "]\n"
+    show (Train name days stations) = ret where
+                    ret = "Pociag [" ++ name ++ "]\n" ++ join (names stations) " -> "  ++"\n"
+                    names a = map (\it -> getName it) a
 
 instance Show Station where
     show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
@@ -85,14 +87,16 @@ instance Show Arrival where
 
 instance Eq Day
 
----------------------------------------
---API----------------------------------
----------------------------------------
-
 
 ----------------------------------------
 --Helper Methods------------------------
 ----------------------------------------
+join :: [String] -> String -> String
+join [] separator = ""
+join (x:[]) separator = x
+join (x:xs) separator = concat ( [x] ++ [separator] ++ [join xs separator])
+
+
 empty :: DBS
 empty = DBS (DB []) (DB [])
 
