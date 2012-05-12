@@ -45,8 +45,8 @@ class Database d where
     findAllByName :: (Named a) => String -> (d a) -> [a]
     findAllByName name db = filter (\it -> getName it == name) (getObjects db)
 
-    exists :: (Named a,Eq a) => String -> (d a) -> Bool
-    exists name db = (findAllByName name db) /= []
+    exists :: (Named a) => String -> (d a) -> Bool
+    exists name db = length (findAllByName name db) > 0
 
     remove :: (Named a) => String -> (d a) -> (d a)
     remove name db = setObjects newObj db where
