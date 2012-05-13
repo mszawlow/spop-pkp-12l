@@ -1,4 +1,5 @@
 module Menu where
+import Main
 import Model
 import API
 import IO
@@ -7,6 +8,8 @@ import System.Time hiding (Day)
 import System.Locale
 import System.Environment
 import Data.Time hiding (Day)
+import Data.List
+
 
 -- Funkcja menu g³ównego
 menu (DBS sdb tdb) = do 
@@ -97,7 +100,7 @@ modifyStationMenu (DBS sdb tdb) = do
 	case name of
 		"X" -> stationMenu (DBS sdb tdb)
 		"x" -> stationMenu (DBS sdb tdb)
-		otherwise -> if exists name sdb == False then do
+		otherwise -> if exists name sdb then do
 			putStrLn "Podaj nowa nazwe stacji: "
 			new_name <- getLine
 			case new_name of
@@ -106,12 +109,12 @@ modifyStationMenu (DBS sdb tdb) = do
 				otherwise -> if exists new_name sdb == False then do
 						putStrLn ("Stacja " ++ name ++ " zmienila nazwe na " ++ new_name)
 						modifyStationMenu (DBS (modifyStation renameStation name [new_name] sdb) tdb)
-				             else do 
-					       putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
-					       modifyStationMenu (DBS sdb tdb)
+							else do 
+								putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
+								modifyStationMenu (DBS sdb tdb)
 		             else do 
-		               putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
-			       modifyStationMenu (DBS sdb tdb)
+						putStrLn "Podana stacja nie istnieje! Wpisz inna nazwe!"
+						modifyStationMenu (DBS sdb tdb)
 
 				
 
@@ -153,13 +156,6 @@ addTrainMenu (DBS sdb tdb) = do
 			       putStrLn "Podany pociag istnieje! Wpisz inna nazwe!"
 			       addTrainMenu (DBS sdb tdb)
 				
--- Funkcja zamieniajaca Stringa na Day
-string2Day string = [read string::Day]
-
--- Funkcja zmieniajaca Stringa na Time
-string2Time string = read (string ++ ":00")::TimeOfDay
-
-
 
 -- Funkcja wyswietlajaca polecenia dodawania stacji do pociagow
 addStationToTrainMenu trainName mode (DBS sdb tdb) = do
@@ -182,8 +178,8 @@ addStationToTrainMenu trainName mode (DBS sdb tdb) = do
 						"x" -> if mode == "add" then addTrainMenu (DBS sdb tdb) else modifyTrainTimetable (DBS sdb tdb)
                                                 otherwise -> if exists trainName tdb then
                                                                  do putStrLn ("Stacja " ++ stationName ++ " zostala dodana do pociagu " ++ trainName ++ ".")
-                                                                    if mode == "add" then addStationToTrainMenu trainName "add" (addStationToTrain stationName trainName (string2Time arrival) (string2Time departure))
-						                    else addStationToTrainMenu trainName "modify" (modifyStationToTrain stationName trainName (string2Time arrival) (string2Time departure))
+                                                                    if mode == "add" then addStationToTrainMenu trainName "add" (addStationToTrain stationName trainName (string2Time arrival) (string2Time departure) (DBS sdb tdb))
+																	else addStationToTrainMenu trainName "modify" (modifyStationToTrain stationName trainName (string2Time arrival) (string2Time departure) (DBS sdb tdb))
 						             else do putStrLn "Podany pociag nie istnieje! Sprobuj ponownie ..."
 							             if mode == "add" then addStationToTrainMenu trainName "add" (DBS sdb tdb)
 							             else addStationToTrainMenu trainName "modify" (DBS sdb tdb)
@@ -308,7 +304,6 @@ eraseOneStationFromTrain (DBS sdb tdb) = do
 				"x" -> eraseOneStationFromTrain (DBS sdb tdb)
 				otherwise -> if isStationInTrain stationName name tdb then do
 						putStrLn ("Udalo sie usunac stacje " ++ stationName ++ " z rozkladu jazdy pociagu " ++ name ++ ".")
-						-- DOPISAC WYWOLANIE F/UNKCJI USUWAJACEJ
 						eraseOneStationFromTrain (eraseStationFromTrain stationName name (DBS sdb tdb))
 				else do
 					putStrLn ("Podana stacja nie istnieje lub nie nalezy do rozkladu jazdy tego pociagu!!! Sprobuj ponownie...")
@@ -352,7 +347,7 @@ modifyTrainName (DBS sdb tdb) = do
 				"x" -> modifyTrainName (DBS sdb tdb)
 				otherwise -> if exists new_name tdb == False then do
 						putStrLn ("Nazwe pociagu " ++ name ++ " zmieniono na " ++ new_name ++ ".")
-						modifyTrainName (renameTrain name new_name tdb)
+						modifyTrainName (renameTrain name new_name (DBS sdb tdb))
 				else do
 					putStrLn "Podana pociag istnieje!!! Sprobuj ponownie ..."
 					modifyTrainName (DBS sdb tdb)
@@ -368,15 +363,15 @@ connectionMenu (DBS sdb tdb) = do
 	putStrLn "Podaj stacje poczatkowa: "
 	firstStation <- getLine
 	case firstStation of
-		"X" -> menu
-		"x" -> menu
-		otherwise -> if exists firstStation sdb == False then do 
+		"X" -> menu (DBS sdb tdb)
+		"x" -> menu (DBS sdb tdb)
+		otherwise -> if exists firstStation sdb then do 
 			putStrLn "Podaj stacje koncowa: "
 			lastStation <- getLine
 			case lastStation of
-				"X" -> connectionMenu
-				"x" -> connectionMenu
-				otherwise -> if exists lastStation sdb == False then do 
+				"X" -> connectionMenu (DBS sdb tdb)
+				"x" -> connectionMenu (DBS sdb tdb)
+				otherwise -> if exists lastStation sdb then do 
 					putStrLn "Podaj akceptowalna liczbe przesiadek: "
 					change <- getLine
 					case change of
@@ -385,17 +380,23 @@ connectionMenu (DBS sdb tdb) = do
 						otherwise -> do
 							putStrLn "Podaj dzien dla ktorego chcesz wyszukac polaczenie: "
 							departureDate <- getLine
+							putStrLn "Podaj godzine odjazdu pociagu: "
+							departureTime <- getLine
 							case departureDate of
 								"X" -> connectionMenu (DBS sdb tdb)
 								"x" -> connectionMenu (DBS sdb tdb)
-								otherwise -> funkcja2 departureDate -- !!!!!!!!!!!!!!!!!!!! funkcja firstStation lastStation change departureDate
+								otherwise -> do
+									-- !!!!!!!!!!!!!!!!!!!! funkcja firstStation lastStation change departureDate departure Time
 									-- WYCHODZI Z PROGRAMU A CHCEMY WYSWIETLAC connectionMenu
+									putStrLn "Nacisnij ENTER, aby wyszukac inne polaczenie ..."
+									waitForEnter <- getLine
+									connectionMenu (DBS sdb tdb)
 				else do
 					putStrLn "Podana stacja nie istnieje!!! Sprobuj ponownie ..."
-					connectionMenu
+					connectionMenu (DBS sdb tdb)
 		else do
 			putStrLn "Podana stacja nie istnieje!!! Sprobuj ponownie ..."
-			connectionMenu
+			connectionMenu (DBS sdb tdb)
 
 -- Funkcja wyswietlajaca menu dla wyszukiwania rozkladow jazdy
 timetableMenu (DBS sdb tdb) = do
@@ -405,15 +406,24 @@ timetableMenu (DBS sdb tdb) = do
 	case name of
 		"X" -> menu (DBS sdb tdb)
 		"x" -> menu (DBS sdb tdb)
-		otherwise -> if exists name sdb == False then do
-			putStrLn "Podaj dzien, dla ktorego chcesz zobaczyc rozklad jady: "
+		otherwise -> if exists name sdb then do
+			putStrLn "Podaj dzien, dla ktorego chcesz zobaczyc rozklad jazdy: "
 			day <- getLine
-			funkcja2 name
-			-- WYCHODZI Z PROGRAMU A CHCEMY WYSWIETLAC timetableMenu
+			----------------------------- COS JEST NIE TAK
+			--getTimetableForStation name (string2Day day)
+			putStrLn "Nacisnij ENTER aby zakonczyc przegladanie rozkladu jazdy ..."
+			waitForEnter <- getLine
+			timetableMenu (DBS sdb tdb)
 		else do
 			putStrLn "Podana stacja nie istnieje!!! Sprobuj ponownie ..."
-			timetableMenu
+			timetableMenu (DBS sdb tdb)
 
+
+-- Funkcja zamieniajaca Stringa na Day
+string2Day string = [read string::Day]
+
+-- Funkcja zmieniajaca Stringa na Time
+string2Time string = read (string ++ ":00")::TimeOfDay
 
 -- Funkcja sprawdza czy argument jest Intem
 isInt [] = False
@@ -429,11 +439,26 @@ isString [x] = if isAlpha x then True
 isString (x:xs) = if isAlpha x then isString xs
 					 else False
 
--- !!!!!!!!!!!!!!! SPRAWDZANIE POPRAWNEJ DLUGOSCI ZEBY SIE NIE WYSYPYWALO JAK JEST ZA MALO ZNAKOW
 -- Funkcja sprawdza czy argument jest godzina
 isTime [] = False
 isTime (a:b:c:d:e:f) = if (a>='0' && a<='1' && (isDigit b) && c==':' && d>='0' && d<='5' && (isDigit e) && f==[]) then True
 							 else if (a=='2' && b>='0' && b<='3' && c==':' && d>='0' && d<='5' && (isDigit e) && f==[]) then True
 							 else False
-							
+					
+-- Funkcja zamienia dni wypisane po przecinku na tablice dni
+string2Array :: String -> [String]	
+string2Array [] = []
+string2Array x = splitOn (==',') x
 
+-- Funkcja dzielaca Stringa na liste elementow 
+splitOn :: (a -> Bool) -> [a] -> [[a]]
+splitOn _ [] = []
+splitOn f l@(x:xs)
+  | f x = splitOn f xs
+  | otherwise = let (h,t) = break f l in h:(splitOn f t)
+
+-- Funkcja usuwa ze Stringa spacje
+stringCleaner :: String -> String
+stringCleaner [] = []
+stringCleaner (x:xs) = if x == ' ' then stringCleaner xs 
+					else x : stringCleaner xs
