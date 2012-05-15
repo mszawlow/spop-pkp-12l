@@ -31,8 +31,12 @@ getTestData = ret where
         
     ret = dbs8
 
-main = menu getTestData{-ret where
+main = putStrLn "asd" --searchConn "Warszawa" "Zakopane" 0 [] getTestData
+
+
+
+{- menu getTestData{-ret where
     x (DBS (DB a) _) = map show a
     y (DBS _ (DB a)) = map show a
     tdb (DBS _ a) = a
-    ret = do putStrLn (concat (x getTestData) ++ concat (y getTestData) ++ getTimetableForStation "Warszawa" Mon getTestData)-}
+    ret = do putStrLn (concat (x getTestData) ++ concat (y getTestData) ++ getTimetableForStation "Warszawa" Mon getTestData)-} -}

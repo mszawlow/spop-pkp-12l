@@ -114,10 +114,6 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
 
 
 
-
-
-
-
 ---------------CHECK-----------------------
 --Nazwa pociagu -> dzien -> baza pociagow -> true/false
 --zwraca czy pociag jedzie danego dnia
