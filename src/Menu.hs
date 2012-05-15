@@ -11,7 +11,7 @@ import Data.Time hiding (Day)
 import Data.List
 
 ---------------------------------------------------------------------------------------------------------
--- Funkcja menu g³ównego---------------------------------------------------------------------------------
+-- Funkcja menu gÂ³Ã³wnego---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------
 menu (DBS sdb tdb) = do 
 	putStrLn " "
@@ -490,7 +490,7 @@ timetableMenu (DBS sdb tdb) = do
 			putStrLn "Podaj dzien, dla ktorego chcesz zobaczyc rozklad jazdy: "
 			day <- getLine
 			----------------------------- COS JEST NIE TAK
-			getTimetableForStation name (string2Day day) (DBS sdb tdb)
+			putStrLn getTimetableForStation name (string2Day day) (DBS sdb tdb)
 			putStrLn "Nacisnij ENTER aby zakonczyc przegladanie rozkladu jazdy ..."
 			waitForEnter <- getLine
 			timetableMenu (DBS sdb tdb)
