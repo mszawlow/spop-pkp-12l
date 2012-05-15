@@ -44,6 +44,10 @@ class Database d where
 
     findAllByName :: (Named a) => String -> (d a) -> [a]
     findAllByName name db = filter (\it -> getName it == name) (getObjects db)
+    
+    findAllByNames :: (Named a) => [String] -> (d a) -> [a]
+    findAllByNames names db = filter (\it -> elem (getName it) names) (getObjects db)
+
 
     exists :: (Named a) => String -> (d a) -> Bool
     exists name db = length (findAllByName name db) > 0
@@ -107,13 +111,13 @@ printArrival stName arr (DBS sdb tdb) = ret where
 
 
 --bierze nastepna stacje pociagu
-getNextStation :: String -> String -> DBS -> String
+{-getNextStation :: String -> String -> DBS -> String
 getNextStation stName trName (DBS sdb tdb) = ret where
     ret = getNext stations stName
     (Train _ _ stations) = head (findAllByName trName tdb)
     getNext (x:xs) n  | (n == getName x) = getName (head xs)
                       | otherwise = getNext xs n
-
+-}
 
 join :: [String] -> String -> String
 join [] separator = ""
@@ -161,3 +165,39 @@ removeTrainArrival (Station name arrs) trainName = (Station name arrs') where
                          else [it])
                     arrs
                    )
+
+
+
+--searching api
+getTrainStations :: String -> DB Train -> [Id]
+getTrainStations trName tdb = stations where
+    (Train _ _ stations) = head (findAllByName trName tdb)
+
+
+searchConn :: String -> String -> String -> Int -> [Arrival] -> DBS -> [[Arrival]]
+searchConn lastTrain startSt endSt count initArrs (DBS sdb tdb) = ret where
+    (Station _ startArrs) = head (findAllByName startSt sdb)
+    (Station _ endArrs) = head (findAllByName endSt sdb)
+    findArrival trainId arrivals = head (filter (\arr -> getName arr == trainId) arrivals)
+    czyStaje trainId stName = elem stName (map getName (getTrainStations trainId tdb)) 
+    getNextStations (x:[]) n = []
+    getNextStations (x:xs) n  | (n == x) = xs
+                      | otherwise = getNextStations xs n 
+
+    ret = if count == 0 then arrs else arrs2 where 
+        arrs = filter (\it -> length it > 0) (map (\arr -> if czyStaje (getName arr) endSt then initArrs ++ [arr, findArrival (getName arr) endArrs] else []) startArrs)
+        
+        arrs2 = concat (map processTrain trains) 
+        processTrain (Train tId _ tSts) = ret where
+                ret = filter (\it -> length it > 0) rets
+                stations = findAllByNames (getNextStations (map getName tSts) startSt) sdb
+                rets = concat (map (\(Station stId a) -> searchConn tId stId endSt (count-1) (initArrs ++ [findArrival tId startArrs, findArrival tId a]) (DBS sdb tdb)) stations)
+                
+                
+        trains = filter (\tr -> not (czyStaje (getName tr) endSt || (getName tr) == lastTrain)) (findAllByNames (map getName startArrs) tdb)
+
+
+search :: String -> String -> Int -> DBS -> [[Arrival]]
+search startSt endSt 0 (DBS sdb tdb) = searchConn "" startSt endSt 0 [] (DBS sdb tdb)
+search startSt endSt count (DBS sdb tdb) = ret where
+    ret =  search startSt endSt (count-1) (DBS sdb tdb) ++ searchConn "" startSt endSt count [] (DBS sdb tdb)
