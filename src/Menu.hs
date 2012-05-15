@@ -1,12 +1,9 @@
 module Menu where
-import Main
 import Model
 import API
 import IO
 import Char
 import System.Time hiding (Day)
-import System.Locale
-import System.Environment
 import Data.Time hiding (Day)
 import Data.List
 
