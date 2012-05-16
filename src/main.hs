@@ -31,10 +31,8 @@ getTestData = ret where
         
     ret = dbs8
 
-main = putStrLn "asd" --searchConn "Warszawa" "Zakopane" 0 [] getTestData
+main = menu getTestData --searchConn "Warszawa" "Zakopane" 0 [] getTestData
 
-
-menu getTestData
 {- menu getTestData{-ret where
     x (DBS (DB a) _) = map show a
     y (DBS _ (DB a)) = map show a

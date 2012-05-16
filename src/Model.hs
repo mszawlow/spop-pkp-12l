@@ -14,8 +14,8 @@ data Train = Train String [Day] [Id]
 --konstruktor: St name [lista pociagow]
 data Station = Station String [Arrival]
 
---konstruktor: Arr pociagId czasPrzyjazdu
-data Arrival = Arrival Id TimeOfDay TimeOfDay
+--konstruktor: Arr pociagId czasPrzyjazdu czasOdjazdu
+data Arrival = Arrival Id Id TimeOfDay TimeOfDay
 
 data (Named a) => DB a = DB [a]
 
@@ -69,7 +69,7 @@ instance Named Train where
     getName (Train name days stations) = name
 
 instance Named Arrival where
-    getName (Arrival tr time st) = getName tr
+    getName (Arrival tr _ time st) = getName tr
 
 instance Named Station where
     getName (Station name arrs) = name
@@ -87,7 +87,7 @@ instance Show Station where
     show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
 
 instance Show Arrival where
-    show (Arrival tr timeIn timeOut) = show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
+    show (Arrival tr st timeIn timeOut) = getName tr ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
 
 instance Eq Day where
     c == c' = fromEnum c == fromEnum c'
@@ -107,6 +107,22 @@ printArrival stName arr (DBS sdb tdb) = ret where
     getNext (x:xs) n  | (n == getName x) = getName (head xs)
                       | otherwise = getNext xs n
 
+
+
+---------------CHECK-----------------------
+--Nazwa pociagu -> dzien -> baza pociagow -> true/false
+--zwraca czy pociag jedzie danego dnia
+isTrainOnTimetable :: String -> Day -> DB Train -> Bool
+isTrainOnTimetable name day tdb = ret where
+    train = head (findAllByName name tdb)
+    ret = elem day (getDays train)
+
+--Nazwa stacji -> nazwa pociagu -> baza pociagow -> true/false
+--zwraca odpowiedz na pytanie czy pociag zatrzymuje sie na danej stacji
+isStationInTrain :: String -> String -> DB Train -> Bool
+isStationInTrain stName trName tdb = ret where
+    (Train name days stations) = head (findAllByName trName tdb)
+    ret = elem stName (map getName stations)
 
 
 
@@ -174,30 +190,48 @@ getTrainStations trName tdb = stations where
     (Train _ _ stations) = head (findAllByName trName tdb)
 
 
-searchConn :: String -> String -> String -> Int -> [Arrival] -> DBS -> [[Arrival]]
-searchConn lastTrain startSt endSt count initArrs (DBS sdb tdb) = ret where
-    (Station _ startArrs) = head (findAllByName startSt sdb)
-    (Station _ endArrs) = head (findAllByName endSt sdb)
-    findArrival trainId arrivals = head (filter (\arr -> getName arr == trainId) arrivals)
-    czyStaje trainId stName = elem stName (map getName (getTrainStations trainId tdb)) 
-    getNextStations (x:[]) n = []
-    getNextStations (x:xs) n  | (n == x) = xs
-                      | otherwise = getNextStations xs n 
+searchConn :: String -> String -> String -> Int -> Day -> [Arrival] -> DBS -> [[Arrival]]
+searchConn lastTrain startSt endSt count day initArrs (DBS sdb tdb) = ret where
+    (Station _ startArrs_) = head (findAllByName startSt sdb)
+    (Station _ endArrs_) = head (findAllByName endSt sdb)
 
-    ret = if count == 0 then arrs else arrs2 where 
-        arrs = filter (\it -> length it > 0) (map (\arr -> if czyStaje (getName arr) endSt then initArrs ++ [arr, findArrival (getName arr) endArrs] else []) startArrs)
+    findArrival_ trainId arrs = head (filter (\arr -> getName arr == trainId) arrs)
+    
+    isDrivingThru_ trainId stName = elem stName (map getName (getTrainStations trainId tdb)) 
+    
+    getNextStations_ (x:[]) n = []
+    getNextStations_ (x:xs) n  | (n == x) = xs
+                      | otherwise = getNextStations_ xs n 
+
+    ret = if count == 0 then arrivals else arrivals2 where 
+
+
+        arrivals = filter (\it -> length it > 0) (
+            map (\arr -> 
+                if (isDrivingThru_ (getName arr) endSt && isTrainOnTimetable (getName arr) day tdb)
+                    then initArrs ++ [arr, findArrival_ (getName arr) endArrs_] 
+                    else []
+                ) 
+            startArrs_)
         
-        arrs2 = concat (map processTrain trains) 
+        arrivals2 = concat (map processTrain trains) 
+        
         processTrain (Train tId _ tSts) = ret where
                 ret = filter (\it -> length it > 0) rets
-                stations = findAllByNames (getNextStations (map getName tSts) startSt) sdb
-                rets = concat (map (\(Station stId a) -> searchConn tId stId endSt (count-1) (initArrs ++ [findArrival tId startArrs, findArrival tId a]) (DBS sdb tdb)) stations)
+                stations = findAllByNames (getNextStations_ (map getName tSts) startSt) sdb
+                rets = concat (
+                        map (\(Station stId a) -> 
+                                searchConn tId stId endSt (count-1) day (initArrs ++ [findArrival_ tId startArrs_, findArrival_ tId a]) (DBS sdb tdb)
+                            )
+                        stations
+                    )
                 
                 
-        trains = filter (\tr -> not (czyStaje (getName tr) endSt || (getName tr) == lastTrain)) (findAllByNames (map getName startArrs) tdb)
+        trains = filter (\tr -> not (isDrivingThru_ (getName tr) endSt || (getName tr) == lastTrain)) (findAllByNames properArrivals tdb)
+        properArrivals = map getName (filter (\(Arrival _ _ _ departureTime) ->  arrivalTime < departureTime) startArrs_)
+        (Arrival _ _ arrivalTime _) = last initArrs
 
-
-search :: String -> String -> Int -> DBS -> [[Arrival]]
-search startSt endSt 0 (DBS sdb tdb) = searchConn "" startSt endSt 0 [] (DBS sdb tdb)
-search startSt endSt count (DBS sdb tdb) = ret where
-    ret =  search startSt endSt (count-1) (DBS sdb tdb) ++ searchConn "" startSt endSt count [] (DBS sdb tdb)
+search :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> [[Arrival]]
+search startSt endSt 0 day departureTime (DBS sdb tdb) = searchConn "" startSt endSt 0 day [] (DBS sdb tdb)
+search startSt endSt count day departureTime (DBS sdb tdb) = ret where
+    ret =  search startSt endSt (count-1) day departureTime (DBS sdb tdb) ++ searchConn "" startSt endSt count day [] (DBS sdb tdb)

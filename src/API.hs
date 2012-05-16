@@ -22,7 +22,7 @@ addTrain name days db = insert [(Train name days [])] db
 addStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
 addStationToTrain stName trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb') where
     sdb' = modifyStation insertArrivals stName [arrival] sdb
-    arrival = (Arrival (getId train) inTime outTime)
+    arrival = (Arrival (Id trName) (Id stName) inTime outTime)
     train = head (findAllByName trName tdb)
     tdb' = setObjects newTrains tdb
     newTrains =  map
@@ -55,7 +55,7 @@ renameTrain old new (DBS sdb tdb) = (DBS sdb tdb') where
 modifyStationToTrain :: String -> String -> TimeOfDay -> TimeOfDay -> DBS -> DBS
 modifyStationToTrain stName trName inTime outTime (DBS sdb tdb) = (DBS sdb' tdb) where
     (Station name arrs) = head (findAllByName stName sdb)
-    newArrs = map (\(Arrival trainId x y) -> if (getName trainId == trName) then (Arrival trainId inTime outTime) else (Arrival trainId x y)) arrs
+    newArrs = map (\(Arrival trainId stationId x y) -> if (getName trainId == trName) then (Arrival trainId stationId inTime outTime) else (Arrival trainId stationId x y)) arrs
     sdb' = modifyStation replaceArrivals stName newArrs sdb
 
 --Nazwa pociągu -> lista dni -> Bazy -> Bazy
@@ -114,17 +114,4 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
 
 
 
----------------CHECK-----------------------
---Nazwa pociagu -> dzien -> baza pociagow -> true/false
---zwraca czy pociag jedzie danego dnia
-isTrainOnTimetable :: String -> Day -> DB Train -> Bool
-isTrainOnTimetable name day tdb = ret where
-    train = head (findAllByName name tdb)
-    ret = elem day (getDays train)
 
---Nazwa stacji -> nazwa pociagu -> baza pociagow -> true/false
---zwraca odpowiedz na pytanie czy pociag zatrzymuje sie na danej stacji
-isStationInTrain :: String -> String -> DB Train -> Bool
-isStationInTrain stName trName tdb = ret where
-    (Train name days stations) = head (findAllByName trName tdb)
-    ret = elem stName (map getName stations)
