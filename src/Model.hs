@@ -9,19 +9,19 @@ import Data.Time hiding (Day)
 data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun deriving (Show, Enum, Read)
 
 -- nazwa dni stacje
-data Train = Train String [Day] [Id] deriving (Show)
+data Train = Train String [Day] [Id] deriving (Show,Read)
 
 --konstruktor: St name [lista pociagow]
-data Station = Station String [Arrival] deriving (Show)
+data Station = Station String [Arrival] deriving (Show,Read)
 
 --konstruktor: Arr pociagId czasPrzyjazdu czasOdjazdu
-data Arrival = Arrival Id Id TimeOfDay TimeOfDay deriving (Show)
+data Arrival = Arrival Id Id TimeOfDay TimeOfDay deriving (Show,Read)
 
-data (Named a) => DB a = DB [a] deriving (Show)
+data (Named a) => DB a = DB [a] deriving (Show,Read)
 
-data DBS = DBS (DB Station) (DB Train) deriving (Show)
+data DBS = DBS (DB Station) (DB Train) deriving (Show,Read)
 
-data Id = Id String deriving (Show)
+data Id = Id String deriving (Show,Read)
 
 
 ----------------------------------------
