@@ -87,7 +87,7 @@ instance Show Station where
     show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
 
 instance Show Arrival where
-    show (Arrival tr st timeIn timeOut) = getName tr ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
+    show (Arrival tr st timeIn timeOut) = getName st ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
 
 instance Eq Day where
     c == c' = fromEnum c == fromEnum c'
@@ -145,7 +145,15 @@ empty :: DBS
 empty = DBS (DB []) (DB [])
 
 insertArrivals :: Station -> [Arrival] -> Station
-insertArrivals (Station name arrs) arr = Station name (arr ++ arrs)
+insertArrivals (Station name arrs) arr = Station name (insertArrivalInOrder (head arr) arrs)
+
+insertArrivalInOrder :: Arrival -> [Arrival] -> [Arrival]
+insertArrivalInOrder arr [] = [arr]
+insertArrivalInOrder (Arrival _11 _12 departure _13) ((Arrival _21 _22 departure2 _23):xs) = 
+    if departure > departure2 
+        then (Arrival _21 _22 departure2 _23):insertArrivalInOrder (Arrival _11 _12 departure _13) xs
+        else [(Arrival _11 _12 departure _13),(Arrival _21 _22 departure2 _23)] ++ xs
+
 
 replaceArrivals :: Station -> [Arrival] -> Station
 replaceArrivals (Station name arrs) arr = Station name arr
@@ -190,8 +198,8 @@ getTrainStations trName tdb = stations where
     (Train _ _ stations) = head (findAllByName trName tdb)
 
 
-searchConn :: String -> String -> String -> Int -> Day -> [Arrival] -> DBS -> [[Arrival]]
-searchConn lastTrain startSt endSt count day initArrs (DBS sdb tdb) = ret where
+searchConn :: String -> String -> String -> Int -> Day -> TimeOfDay -> [Arrival] -> DBS -> [[Arrival]]
+searchConn lastTrain startSt endSt count day startTime initArrs (DBS sdb tdb) = ret where
     (Station _ startArrs_) = head (findAllByName startSt sdb)
     (Station _ endArrs_) = head (findAllByName endSt sdb)
 
@@ -212,7 +220,7 @@ searchConn lastTrain startSt endSt count day initArrs (DBS sdb tdb) = ret where
                     then initArrs ++ [arr, findArrival_ (getName arr) endArrs_] 
                     else []
                 ) 
-            startArrs_)
+            properArrivals)
         
         arrivals2 = concat (map processTrain trains) 
         
@@ -221,17 +229,39 @@ searchConn lastTrain startSt endSt count day initArrs (DBS sdb tdb) = ret where
                 stations = findAllByNames (getNextStations_ (map getName tSts) startSt) sdb
                 rets = concat (
                         map (\(Station stId a) -> 
-                                searchConn tId stId endSt (count-1) day (initArrs ++ [findArrival_ tId startArrs_, findArrival_ tId a]) (DBS sdb tdb)
+                                searchConn tId stId endSt (count-1) day startTime (initArrs ++ [findArrival_ tId startArrs_, findArrival_ tId a]) (DBS sdb tdb)
                             )
                         stations
                     )
                 
                 
-        trains = filter (\tr -> not (isDrivingThru_ (getName tr) endSt || (getName tr) == lastTrain)) (findAllByNames properArrivals tdb)
-        properArrivals = map getName (filter (\(Arrival _ _ _ departureTime) ->  arrivalTime < departureTime) startArrs_)
+        trains = filter (\tr -> not (isDrivingThru_ (getName tr) endSt || (getName tr) == lastTrain)) (findAllByNames properArrivalsNames tdb)
+        properArrivals = if length initArrs > 0 
+                            then filter (\(Arrival _ _ _ departureTime) ->  arrivalTime < departureTime) startArrs_
+                            else filter (\(Arrival _ _ _ departureTime) ->  startTime < departureTime) startArrs_
+        properArrivalsNames = map getName properArrivals
         (Arrival _ _ arrivalTime _) = last initArrs
 
-search :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> [[Arrival]]
-search startSt endSt 0 day departureTime (DBS sdb tdb) = searchConn "" startSt endSt 0 day [] (DBS sdb tdb)
-search startSt endSt count day departureTime (DBS sdb tdb) = ret where
-    ret =  search startSt endSt (count-1) day departureTime (DBS sdb tdb) ++ searchConn "" startSt endSt count day [] (DBS sdb tdb)
+searchAlgorithm :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> [[Arrival]]
+searchAlgorithm startSt endSt 0 day departureTime (DBS sdb tdb) = searchConn "" startSt endSt 0 day departureTime [] (DBS sdb tdb)
+searchAlgorithm startSt endSt count day departureTime (DBS sdb tdb) = ret where
+    ret =  searchAlgorithm startSt endSt (count-1) day departureTime (DBS sdb tdb) ++ searchConn "" startSt endSt count day departureTime [] (DBS sdb tdb)
+
+
+search :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> String
+search startSt endSt count day departureTime dbs = printConnections where
+    printArrs (Arrival tr st timeIn timeOut) (Arrival tr2 st2 timeIn2 timeOut2) = ret where 
+        ret = line1 ++ line2 ++ line3
+        line1 = getName st ++ " -> " ++ getName st2 ++ "\n"
+        line2 = "Czas trwania: " ++ show timeOut ++ " - " ++ show timeIn2 ++ "\n"
+        line3 = "Pociąg: " ++ getName tr ++ "\n\n"
+
+    connections = searchAlgorithm startSt endSt count day departureTime dbs
+    printConnections = concat (map (\conn -> printConnection conn) connections)
+
+    printConnection [] = ""
+    printConnection (x:y:xs) = printArrs x y ++ printConnection xs
+
+
+
+
