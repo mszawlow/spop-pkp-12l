@@ -9,21 +9,19 @@ import Data.Time hiding (Day)
 data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun deriving (Show, Enum, Read)
 
 -- nazwa dni stacje
-data Train = Train String [Day] [Id]
+data Train = Train String [Day] [Id] deriving (Show)
 
 --konstruktor: St name [lista pociagow]
-data Station = Station String [Arrival]
+data Station = Station String [Arrival] deriving (Show)
 
 --konstruktor: Arr pociagId czasPrzyjazdu czasOdjazdu
-data Arrival = Arrival Id Id TimeOfDay TimeOfDay
+data Arrival = Arrival Id Id TimeOfDay TimeOfDay deriving (Show)
 
-data (Named a) => DB a = DB [a]
+data (Named a) => DB a = DB [a] deriving (Show)
 
-data DBS = DBS (DB Station) (DB Train)
+data DBS = DBS (DB Station) (DB Train) deriving (Show)
 
-data When = When [Day] TimeOfDay
-
-data Id = Id String
+data Id = Id String deriving (Show)
 
 
 ----------------------------------------
@@ -59,8 +57,7 @@ class Database d where
 -----------------------------------------
 --class instance definitions-------------
 -----------------------------------------
-instance (Named a,Show a) => Show (DB a) where
-    show (DB x) = concat (map show x)
+
 
 instance Named Id where
     getName (Id a) = a
@@ -78,7 +75,7 @@ instance Database DB where
     getObjects (DB x) = x
     setObjects a (DB x) = DB a
 
-instance Show Train where
+{-instance Show Train where
     show (Train name days stations) = ret where
                     ret = "Pociag [" ++ name ++ "]\n" ++ join (names stations) " -> "  ++"\n"
                     names a = map (\it -> getName it) a
@@ -89,6 +86,10 @@ instance Show Station where
 instance Show Arrival where
     show (Arrival tr st timeIn timeOut) = getName st ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
 
+instance (Named a,Show a) => Show (DB a) where
+    show (DB x) = concat (map show x)
+-}
+
 instance Eq Day where
     c == c' = fromEnum c == fromEnum c'
 
@@ -97,8 +98,11 @@ instance Eq Day where
 --Helper Methods------------------------
 ----------------------------------------
 
-printArrival :: String -> Arrival -> DBS -> String
-printArrival stName arr (DBS sdb tdb) = ret where
+
+----------------PRINT-----------------------
+
+printNextArrival :: String -> Arrival -> DBS -> String
+printNextArrival stName arr (DBS sdb tdb) = ret where
     (Station _ arrs) = head (findAllByName stName sdb)
     arrStr = map show arrs
     ret = show arr ++ getNext stations stName
@@ -107,7 +111,16 @@ printArrival stName arr (DBS sdb tdb) = ret where
     getNext (x:xs) n  | (n == getName x) = getName (head xs)
                       | otherwise = getNext xs n
 
+printTrain :: Train -> String
+printTrain (Train name days stations) = ret where
+                    ret = "Pociag [" ++ name ++ "]\n" ++ join (names stations) " -> "  ++"\n"
+                    names a = map (\it -> getName it) a
 
+printStation :: Station -> String
+printStation (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
+
+printArrival :: Arrival -> String
+printArrival (Arrival tr st timeIn timeOut) = getName st ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
 
 ---------------CHECK-----------------------
 --Nazwa pociagu -> dzien -> baza pociagow -> true/false

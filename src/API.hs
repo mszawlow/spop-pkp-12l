@@ -107,7 +107,7 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
     ret = concat (
                   map (\arr ->
                        if isTrainOnTimetable (getName arr) day tdb
-                       then printArrival name arr (DBS sdb tdb)
+                       then printNextArrival name arr (DBS sdb tdb)
                        else []
                       )
                   arrivals)

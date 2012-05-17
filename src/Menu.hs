@@ -600,7 +600,8 @@ connectionMenu (DBS sdb tdb) = do
 																									putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 																									connectionMenu (DBS sdb tdb)
 																								else do
-																									-- !!!!!!!!!!!!!!!!!!!! funkcja firstStation lastStation change departureDate departureTime
+																									
+																									putStrLn (search firstStation lastStation (read change::Int) (read departureDate::Day) (read departureTime::TimeOfDay) (DBS sdb tdb))
 																									putStrLn "Nacisnij ENTER, aby wyszukac inne polaczenie ..."
 																									waitForEnter <- getLine
 																									connectionMenu (DBS sdb tdb)
