@@ -1,4 +1,5 @@
 import System.IO
+import System.Directory
 import Control.Monad
 import Model
 import API
@@ -37,8 +38,15 @@ getTestData = ret where
 	ret = dbs14
 
 
-saveFile = writeFile "test.txt" (show getTestData)
+saveFile = writeFile "dbs.db" (show getTestData)
 
-readFromFile = do 
-	x <- readFile "test.txt"
-	putStrLn (search "Warszawa" "Zakopane" 0 Mon (read "10:00:00"::TimeOfDay) (read x::DBS))
+readFromFile = do
+				exists <- doesFileExist "dbs.db"
+				if exists	
+					then do
+						x <- readFile "dbs.db"
+						putStrLn (search "Warszawa" "Zakopane" 0 Mon (read "10:00:00"::TimeOfDay) (read x::DBS))
+					else do
+						writeFile "dbs.db" (show empty)
+	
+	
