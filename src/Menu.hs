@@ -166,7 +166,7 @@ addTrainMenu (DBS sdb tdb) = do
 			"X" -> trainMenu (DBS sdb tdb)
 			"x" -> trainMenu (DBS sdb tdb)
 			otherwise -> if exists name tdb == False then do
-				putStrLn "Podaj dni kursowania pociagu: "
+				putStrLn "Podaj dni kursowania pociagu (Mon, Tue, Wed, Thu, Fri, Sat, Sun): "
 				runDays <- getLine
 				case runDays of
 					"X" -> addTrainMenu (DBS sdb tdb)
@@ -192,7 +192,7 @@ addStationToTrainMenu trainName (DBS sdb tdb) = do
 			"X" -> addTrainMenu (DBS sdb tdb)
 			"x" -> addTrainMenu (DBS sdb tdb)
 			otherwise -> if exists stationName sdb then do
-				putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ ": ")
+				putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ " (w formacie hh:mm): ")
 				arrival <- getLine
 				case arrival of
 					"X" -> addTrainMenu (DBS sdb tdb)
@@ -204,7 +204,7 @@ addStationToTrainMenu trainName (DBS sdb tdb) = do
 										putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 										addStationToTrainMenu trainName (DBS sdb tdb)
 									else do
-										putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ ": ")
+										putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ " (w formacie hh:mm): ")
 										departure <- getLine
 										case departure of
 											"X" -> addTrainMenu (DBS sdb tdb)
@@ -284,7 +284,7 @@ modifyTrainTimetable (DBS sdb tdb) = do
 			"X" -> modifyTrainMenu (DBS sdb tdb)
 			"x" -> modifyTrainMenu (DBS sdb tdb)
 			otherwise -> if exists name tdb then do
-				putStrLn "Podaj nowe dni kursowania pociagu: "
+				putStrLn "Podaj nowe dni kursowania pociagu (Mon, Tue, Wed, Thu, Fri, Sat, Sun): "
 				runDays <- getLine
 				case runDays of
 					"X" -> modifyTrainTimetable (DBS sdb tdb)
@@ -310,7 +310,7 @@ modifyStationForTrain trainName (DBS sdb tdb) = do
 			"X" -> modifyTrainTimetable (DBS sdb tdb)
 			"x" -> modifyTrainTimetable (DBS sdb tdb)
 			otherwise -> if isStationInTrain stationName trainName tdb then do
-				putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ ": ")
+				putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ " (w formacie hh:mm): ")
 				arrival <- getLine
 				case arrival of
 					"X" -> modifyTrainTimetable (DBS sdb tdb)
@@ -322,7 +322,7 @@ modifyStationForTrain trainName (DBS sdb tdb) = do
 										putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 										modifyStationForTrain trainName (DBS sdb tdb)
 									else do
-										putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ ": ")
+										putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ " (w formacie hh:mm): ")
 										departure <- getLine
 										case departure of
 											"X" -> modifyTrainTimetable (DBS sdb tdb)
@@ -363,7 +363,7 @@ addOneStationToTrain (DBS sdb tdb) = do
 						"X" -> addOneStationToTrain (DBS sdb tdb)
 						"x" -> addOneStationToTrain (DBS sdb tdb)
 						otherwise -> if exists stationName sdb then do
-							putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ ": ")
+							putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ " (w formacie hh:dd): ")
 							arrival <- getLine
 							case arrival of
 								"X" -> addOneStationToTrain (DBS sdb tdb)
@@ -375,7 +375,7 @@ addOneStationToTrain (DBS sdb tdb) = do
 													putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 													addOneStationToTrain (DBS sdb tdb)
 												else do
-													putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ ": ")
+													putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ " (w formacie hh:dd): ")
 													departure <- getLine
 													case departure of
 														"X" -> addOneStationToTrain (DBS sdb tdb)
@@ -419,7 +419,7 @@ modifyStationTimetableForTrain (DBS sdb tdb) = do
 						"X" -> modifyStationTimetableForTrain (DBS sdb tdb)
 						"x" -> modifyStationTimetableForTrain (DBS sdb tdb)
 						otherwise -> if isStationInTrain stationName trainName tdb then do
-							putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ ": ")
+							putStrLn ("Podaj godzine przyjazdu pociagu " ++ trainName ++ " na stacje " ++ stationName ++ " (w formacie hh:mm): ")
 							arrival <- getLine
 							case arrival of
 								"X" -> modifyStationTimetableForTrain (DBS sdb tdb)
@@ -431,7 +431,7 @@ modifyStationTimetableForTrain (DBS sdb tdb) = do
 													putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 													modifyStationTimetableForTrain (DBS sdb tdb)
 												else do
-													putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ ": ")
+													putStrLn ("Podaj godzine odjazdu pociagu " ++ trainName ++ " ze stacji " ++ stationName ++ " (w formacie hh:mm): ")
 													departure <- getLine
 													case departure of
 														"X" -> modifyStationTimetableForTrain (DBS sdb tdb)
@@ -498,7 +498,7 @@ modifyTrainDaysMenu (DBS sdb tdb) = do
 			"X" -> modifyTrainMenu (DBS sdb tdb)
 			"x" -> modifyTrainMenu (DBS sdb tdb)
 			otherwise -> if exists name tdb then do
-				putStrLn ("Podaj dni kursowania pociagu " ++ name ++ ": ")
+				putStrLn ("Podaj dni kursowania pociagu " ++ name ++ " (Mon, Tue, Wed, Thu, Fri, Sat, Sun): ")
 				new_days <- getLine
 				case new_days of
 					"X" -> modifyTrainMenu (DBS sdb tdb)
@@ -578,17 +578,15 @@ connectionMenu (DBS sdb tdb) = do
 													putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 													connectionMenu (DBS sdb tdb)
 												else do
-													putStrLn "Podaj dzien dla ktorego chcesz wyszukac polaczenie: "
+													putStrLn "Podaj dzien dla ktorego chcesz wyszukac polaczenie (Mon, Tue, Wed, Thu, Fri, Sat, Sun): "
 													departureDate <- getLine
-													-----------------------------------------------------------------------------------------------------
-													---------- ZASTANOWIC SIE NAD WPROWADZENIEM DATY I OBLICZANIEM JAKI TO DZIEN TYGODNIA
 													case departureDate of
 														"X" -> connectionMenu (DBS sdb tdb)
 														"x" -> connectionMenu (DBS sdb tdb)
 														otherwise -> if isDayArray (string2array departureDate) == False then do
 																			putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 																			connectionMenu (DBS sdb tdb)
-																		else do	putStrLn "Podaj godzine odjazdu pociagu: "
+																		else do	putStrLn "Podaj godzine odjazdu pociagu (w formacie hh:mm): "
 																			departureTime <- getLine
 																			case departureTime of
 																				"X" -> connectionMenu (DBS sdb tdb)
@@ -600,8 +598,9 @@ connectionMenu (DBS sdb tdb) = do
 																									putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 																									connectionMenu (DBS sdb tdb)
 																								else do
-																									
+																									putStrLn "------------------------------------------------------------------------------"
 																									putStrLn (search firstStation lastStation (read change::Int) (read departureDate::Day) (read departureTime::TimeOfDay) (DBS sdb tdb))
+																									putStrLn "------------------------------------------------------------------------------"
 																									putStrLn "Nacisnij ENTER, aby wyszukac inne polaczenie ..."
 																									waitForEnter <- getLine
 																									connectionMenu (DBS sdb tdb)
@@ -626,7 +625,7 @@ timetableMenu (DBS sdb tdb) = do
 			"X" -> menu (DBS sdb tdb)
 			"x" -> menu (DBS sdb tdb)
 			otherwise -> if exists name sdb then do
-				putStrLn "Podaj dzien, dla ktorego chcesz zobaczyc rozklad jazdy: "
+				putStrLn "Podaj dzien, dla ktorego chcesz zobaczyc rozklad jazdy (Mon, Tue, Wed, Thu, Fri, Sat, Sun): "
 				day <- getLine
 				case day of
 					"X" -> menu (DBS sdb tdb)
