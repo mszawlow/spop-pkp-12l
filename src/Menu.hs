@@ -74,7 +74,7 @@ addStationMenu (DBS sdb tdb) = do
 			"x" -> stationMenu (DBS sdb tdb)
 			otherwise -> if exists name sdb == False  then do 
 								putStrLn ("Stacja " ++ name ++ " zostala poprawnie dodana!")
-								addStationMenu (DBS (addStation name sdb) tdb)
+								addStationMenu (addStation name (DBS sdb tdb))
 				  			else do putStrLn "Podana stacja istnieje! Wpisz inna nazwe!"
 								addStationMenu (DBS sdb tdb)
 
@@ -176,7 +176,7 @@ addTrainMenu (DBS sdb tdb) = do
 					otherwise -> if isDayArray (string2array runDays) == False then do
 										putStrLn "Wprowadzono bledne dane!!! Sprobuj ponownie ..."
 										addTrainMenu (DBS sdb tdb)
-									else addStationToTrainMenu name (DBS sdb (addTrain name (string2dayArray (string2array runDays)) tdb))
+									else addStationToTrainMenu name (addTrain name (string2dayArray (string2array runDays)) (DBS sdb tdb))
 							else do 
 								putStrLn "Podany pociag istnieje! Wpisz inna nazwe!"
 								addTrainMenu (DBS sdb tdb)

@@ -8,14 +8,14 @@ import Data.Time hiding (Day)
 -------------CREATE-------------
 --Nazwa stacji -> Baza stacji -> Nowa baza stacji
 --Dodaje stacje do bazy stacji, zwraca nowa baze stacji
-addStation :: String -> DB Station  -> DB Station
-addStation name db = insert [(Station name [])] db
+addStation :: String -> DBS  -> DBS
+addStation name (DBS sdb tdb) = (DBS (insert [(Station name [])] sdb) tdb)
 
 
 --Nazwa pociagu -> Lista dni -> baza pociagow -> nowa baza pociagow
 --Dodaje pociag o podanej nazwie i dniach kursowania do bazy pociagow, zwraca nowa baze
-addTrain :: String -> [Day] -> DB Train -> DB Train
-addTrain name days db = insert [(Train name days [])] db
+addTrain :: String -> [Day] -> DBS -> DBS
+addTrain name days (DBS sdb tdb) = (DBS sdb (insert [(Train name days [])] tdb))
 
 --Nazwa stacji -> nazwa pociagu -> przyjazd -> odjazd -> Obydwie bazy danych -> nowe obydwie bazy danych
 --Dodaje do danej stacji nowy przyjazd pociagu o podanych godzinach, do pociagu dodaje nazwe stacji ktora kolejno odwiedzi
@@ -97,7 +97,6 @@ eraseStationFromTrain stName trName (DBS sdb tdb) = (DBS (setObjects sdb' sdb) (
     sdb' = map (\station -> removeTrainArrival station trName) (getObjects sdb)
     tdb' = map (\tr -> if ((getName tr) == trName) then removeStationFromTrain stName tr  else tr) (getObjects tdb)
 
-
 --------------PRINT------------------------
 
 getTimetableForStation :: String -> Day -> DBS -> String
@@ -113,5 +112,18 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
                   arrivals)
 
 
+------------------------------------------------------
+search :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> String
+search startSt endSt count day departureTime dbs = printConnections where
+    printArrs (Arrival tr st timeIn timeOut) (Arrival tr2 st2 timeIn2 timeOut2) = ret where 
+        ret = line1 ++ line2 ++ line3
+        line1 = getName st ++ " -> " ++ getName st2 ++ "\n"
+        line2 = "Czas trwania: " ++ show timeOut ++ " - " ++ show timeIn2 ++ "\n"
+        line3 = "Pociąg: " ++ getName tr ++ "\n\n"
 
+    connections = searchAlgorithm startSt endSt count day departureTime dbs
+    printConnections = concat (map (\conn -> printConnection conn) connections)
+
+    printConnection [] = ""
+    printConnection (x:y:xs) = printArrs x y ++ printConnection xs
 

@@ -10,17 +10,18 @@ s2d s = read s::TimeOfDay
 
 getTestData :: DBS
 getTestData = ret where
+	dbs0 = DBS sdb tdb 
 	tdb =  DB [(Train "Mieszko" [Mon, Tue, Fri, Sat, Sun] []), (Train "Chrobry" [Mon, Tue, Fri, Sat, Sun] [])]
-	tdb2 = addTrain "Walesa" [Mon, Tue, Fri, Sat] tdb
+	tdb2 = addTrain "Walesa" [Mon, Tue, Fri, Sat] dbs0
 	tdb3 = addTrain "Pomorzanin" [Mon, Tue] tdb2
 	tdb4 = addTrain "Baltyk" [Mon, Tue, Fri] tdb3
 	tdb5 = addTrain "Kujawiak" [Mon, Fri] tdb4
 	sdb = DB [(Station "Warszawa" []),(Station "Krakow" []),(Station "Zakopane" [])]
-	sdb2 = addStation "Wroclaw" sdb
+	sdb2 = addStation "Wroclaw" tdb5
 	sdb3 = addStation "Bydgoszcz" sdb2
 	sdb4 = addStation "Gdansk" sdb3
 	sdb5 = addStation "Szczecin" sdb4
-	dbs1 = addStationToTrain "Warszawa" "Mieszko" (s2d "11:10:00") (s2d "11:15:00") (DBS sdb5 tdb5)
+	dbs1 = addStationToTrain "Warszawa" "Mieszko" (s2d "11:10:00") (s2d "11:15:00") sdb5
 	dbs2 = addStationToTrain "Krakow" "Mieszko" (s2d "14:40:00") (s2d "14:45:00") dbs1
 	dbs3 = addStationToTrain "Zakopane" "Mieszko" (s2d "16:40:00") (s2d "16:45:00") dbs2
 	dbs4 = addStationToTrain "Wroclaw" "Chrobry" (s2d "10:20:00") (s2d "10:22:00") dbs3
