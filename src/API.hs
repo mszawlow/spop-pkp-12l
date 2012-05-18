@@ -112,7 +112,9 @@ getTimetableForStation name day (DBS sdb tdb)  = ret where
                   arrivals)
 
 
-------------------------------------------------------
+-----------------Search-------------------------------------
+--kolejny wrapper funkcji szukajacej - dla wynikow wyszukiwania
+--wypisuje je w przejrzystym formacie.
 search :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> String
 search startSt endSt count day departureTime dbs = printConnections where
     printArrs (Arrival tr st timeIn timeOut) (Arrival tr2 st2 timeIn2 timeOut2) = ret where 
