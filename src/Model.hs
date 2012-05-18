@@ -75,21 +75,6 @@ instance Database DB where
     getObjects (DB x) = x
     setObjects a (DB x) = DB a
 
-{-instance Show Train where
-    show (Train name days stations) = ret where
-                    ret = "Pociag [" ++ name ++ "]\n" ++ join (names stations) " -> "  ++"\n"
-                    names a = map (\it -> getName it) a
-
-instance Show Station where
-    show (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map show arrs)
-
-instance Show Arrival where
-    show (Arrival tr st timeIn timeOut) = getName st ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
-
-instance (Named a,Show a) => Show (DB a) where
-    show (DB x) = concat (map show x)
--}
-
 instance Eq Day where
     c == c' = fromEnum c == fromEnum c'
 
@@ -104,11 +89,10 @@ instance Eq Day where
 printNextArrival :: String -> Arrival -> DBS -> String
 printNextArrival stName arr (DBS sdb tdb) = ret where
     (Station _ arrs) = head (findAllByName stName sdb)
-    arrStr = map show arrs
-    ret = show arr ++ getNext stations stName
+    ret = printArrival arr ++ getNext stations stName
     (Train _ _ stations) = head (findAllByName (getName arr) tdb)
     getNext (x:[]) n = "Ostatnia stacja\n"
-    getNext (x:xs) n  | (n == getName x) = getName (head xs)
+    getNext (x:xs) n  | (n == getName x) = getName (head xs) ++ "\n"
                       | otherwise = getNext xs n
 
 printTrain :: Train -> String
@@ -121,6 +105,11 @@ printStation (Station name arrs) = "Stacja [" ++ name ++ "]\n" ++ concat (map sh
 
 printArrival :: Arrival -> String
 printArrival (Arrival tr st timeIn timeOut) = getName st ++ " : " ++ show timeIn ++ " " ++ show timeOut ++ " " ++ getName tr ++ " -> "
+
+join :: [String] -> String -> String
+join [] separator = ""
+join (x:[]) separator = x
+join (x:xs) separator = concat ( [x] ++ [separator] ++ [join xs separator])
 
 ---------------CHECK-----------------------
 --Nazwa pociagu -> dzien -> baza pociagow -> true/false
@@ -138,24 +127,24 @@ isStationInTrain stName trName tdb = ret where
     ret = elem stName (map getName stations)
 
 
+------------------GETTERS---------------------
 
---bierze nastepna stacje pociagu
-{-getNextStation :: String -> String -> DBS -> String
-getNextStation stName trName (DBS sdb tdb) = ret where
-    ret = getNext stations stName
-    (Train _ _ stations) = head (findAllByName trName tdb)
-    getNext (x:xs) n  | (n == getName x) = getName (head xs)
-                      | otherwise = getNext xs n
--}
+getArrivals :: Station -> [Arrival]
+getArrivals (Station name arrs) = arrs
 
-join :: [String] -> String -> String
-join [] separator = ""
-join (x:[]) separator = x
-join (x:xs) separator = concat ( [x] ++ [separator] ++ [join xs separator])
+getDays :: Train -> [Day]
+getDays (Train _ days _) = days
 
+getId :: (Named a) => a -> Id
+getId a = (Id (getName a))
 
 empty :: DBS
 empty = DBS (DB []) (DB [])
+
+getTrainStations :: String -> DB Train -> [Id]
+getTrainStations trName tdb = stations where
+    (Train _ _ stations) = head (findAllByName trName tdb)
+------------------INSERT------------------------
 
 insertArrivals :: Station -> [Arrival] -> Station
 insertArrivals (Station name arrs) arr = Station name (insertArrivalInOrder (head arr) arrs)
@@ -168,29 +157,27 @@ insertArrivalInOrder (Arrival _11 _12 departure _13) ((Arrival _21 _22 departure
         else [(Arrival _11 _12 departure _13),(Arrival _21 _22 departure2 _23)] ++ xs
 
 
+
+
+
+
+
+-------------------MODIFY----------------------
 replaceArrivals :: Station -> [Arrival] -> Station
 replaceArrivals (Station name arrs) arr = Station name arr
 
 renameStation :: Station -> [String] -> Station
 renameStation (Station _ arrs) names = (Station (head names) arrs)
 
-getArrivals :: Station -> [Arrival]
-getArrivals (Station name arrs) = arrs
-
-getDays :: Train -> [Day]
-getDays (Train _ days _) = days
 
 
 
+
+
+--------------------REMOVE---------------------
 removeStationFromTrain :: String -> Train -> Train
 removeStationFromTrain stId (Train name days st) = (Train name days stations) where
     stations = concat (map (\it -> if getName it == name then [] else [it]) st)
-
-
-
-getId :: (Named a) => a -> Id
-getId a = (Id (getName a))
-
 
 removeTrainArrival :: Station -> String -> Station
 removeTrainArrival (Station name arrs) trainName = (Station name arrs') where
@@ -205,12 +192,7 @@ removeTrainArrival (Station name arrs) trainName = (Station name arrs') where
 
 
 
---searching api
-getTrainStations :: String -> DB Train -> [Id]
-getTrainStations trName tdb = stations where
-    (Train _ _ stations) = head (findAllByName trName tdb)
-
-
+--------------------------Searching api-------------------s
 searchConn :: String -> String -> String -> Int -> Day -> TimeOfDay -> [Arrival] -> DBS -> [[Arrival]]
 searchConn lastTrain startSt endSt count day startTime initArrs (DBS sdb tdb) = ret where
     (Station _ startArrs_) = head (findAllByName startSt sdb)
@@ -260,20 +242,6 @@ searchAlgorithm startSt endSt 0 day departureTime (DBS sdb tdb) = searchConn "" 
 searchAlgorithm startSt endSt count day departureTime (DBS sdb tdb) = ret where
     ret =  searchAlgorithm startSt endSt (count-1) day departureTime (DBS sdb tdb) ++ searchConn "" startSt endSt count day departureTime [] (DBS sdb tdb)
 
-
-search :: String -> String -> Int -> Day -> TimeOfDay -> DBS -> String
-search startSt endSt count day departureTime dbs = printConnections where
-    printArrs (Arrival tr st timeIn timeOut) (Arrival tr2 st2 timeIn2 timeOut2) = ret where 
-        ret = line1 ++ line2 ++ line3
-        line1 = getName st ++ " -> " ++ getName st2 ++ "\n"
-        line2 = "Czas trwania: " ++ show timeOut ++ " - " ++ show timeIn2 ++ "\n"
-        line3 = "Pociąg: " ++ getName tr ++ "\n\n"
-
-    connections = searchAlgorithm startSt endSt count day departureTime dbs
-    printConnections = concat (map (\conn -> printConnection conn) connections)
-
-    printConnection [] = ""
-    printConnection (x:y:xs) = printArrs x y ++ printConnection xs
 
 
 
