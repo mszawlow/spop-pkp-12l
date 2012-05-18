@@ -28,7 +28,9 @@ menu (DBS sdb tdb) = do
 		"2" -> do trainMenu (DBS sdb tdb)
 		"3" -> do connectionMenu (DBS sdb tdb)
 		"4" -> do timetableMenu (DBS sdb tdb)
-		"5" -> return()
+		"5" -> do 
+					writeFile "dbs.db" (show (DBS sdb tdb))
+			   		return()
 		otherwise -> do
 					putStrLn "Wybrano zla opcje!!!"
 					menu (DBS sdb tdb)
