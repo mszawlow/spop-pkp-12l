@@ -126,6 +126,6 @@ search startSt endSt count day departureTime dbs = printConnections where
     connections = searchAlgorithm startSt endSt count day departureTime dbs
     printConnections = concat (map (\conn -> printConnection conn) connections)
 
-    printConnection [] = ""
+    printConnection [] = "-----------------------------------\n"
     printConnection (x:y:xs) = printArrs x y ++ printConnection xs
 

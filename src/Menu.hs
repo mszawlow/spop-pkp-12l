@@ -601,7 +601,7 @@ connectionMenu (DBS sdb tdb) = do
 																									connectionMenu (DBS sdb tdb)
 																								else do
 																									putStrLn "------------------------------------------------------------------------------"
-																									putStrLn (search firstStation lastStation (read change::Int) (read departureDate::Day) (read departureTime::TimeOfDay) (DBS sdb tdb))
+																									putStrLn (search firstStation lastStation (read change::Int) (string2day departureDate) (string2time departureTime) (DBS sdb tdb))
 																									putStrLn "------------------------------------------------------------------------------"
 																									putStrLn "Nacisnij ENTER, aby wyszukac inne polaczenie ..."
 																									waitForEnter <- getLine
